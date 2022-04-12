@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hex Fog of War</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/svg.js/3.0.16/svg.min.js"></script>
+    <script src="https://unpkg.com/honeycomb-grid@3.1.8/dist/honeycomb.min.js"></script>
+    <style>
+        html,
+        body, .full {
+          height: 100%;
+          width: 100%;
+        }
+
+        #hex {
+          z-index: 20;
+          position: absolute;
+          top: 0;
+        }
+
+        .flex-container {
+            padding: 0;
+              margin: 0;
+              list-style: none;
+              -ms-box-orient: horizontal;
+              display: -webkit-box;
+              display: -moz-box;
+              display: -ms-flexbox;
+              display: -moz-flex;
+              display: -webkit-flex;
+              display: flex;
+        }
+
+        .column {
+            -webkit-flex-direction: column;
+  flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+
+<div class="flex-container column">
+
+<div>
+    <input type='file'/>
+</div>
+
+<div id="wrapper" class="full">
+    <img class="full" id="map" src="https://www.freeworldmaps.net/europe/france/france-physical-map.jpg" alt="alternatetext">
+    <div class="full" id="hex" >
+    </div>
+</div>
+
+</div>
+<script>
+
+window.addEventListener('load', function() {
+  document.querySelector('input[type="file"]').addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+          var img = document.querySelector('img');
+          img.onload = () => {
+              URL.revokeObjectURL(img.src);  // no longer needed, free memory
+          }
+
+          img.src = URL.createObjectURL(this.files[0]); // set src to blob url
+      }
+  });
+});
+
+
+const draw = SVG().addTo('#hex').size('100%', '100%')
+
+const Hex = Honeycomb.extendHex({ size: 30 })
+const Grid = Honeycomb.defineGrid(Hex)
+// get the corners of a hex (they're the same for all hexes created with the same Hex factory)
+const corners = Hex().corners()
+// an SVG symbol can be reused
+const hexSymbol = draw.symbol()
+    // map the corners' positions to a string and create a polygon
+    .polygon(corners.map(({ x, y }) => `${x},${y}`))
+    .fill('#00FF0050')
+    .stroke({ width: 1, color: '#999' })
+
+
+const color_names = ['fog', 'guarded', 'clear'];
+const colors = {
+    'clear': "#00000000",
+    'fog': "gray",
+    'guarded': "#F1E5AC50"
+};
+const colorpencils = color_names.map(c =>
+     draw.symbol()
+        // map the corners' positions to a string and create a polygon
+        .polygon(corners.map(({ x, y }) => `${x},${y}`))
+        .fill(colors[c])
+        .stroke({ width: 1, color: '#999' })
+)
+
+
+// render 10,000 hexes
+Grid.rectangle({ width: 100, height: 100 }).forEach(hex => {
+    const { x, y } = hex.toPoint()
+    // use hexSymbol and set its position for each hex
+    console.log(Math.floor((x+y) % 3));
+    draw.use(colorpencils[1]).translate(x, y)
+})
+</script>
+</body>
+
+
+
+</html>
+
